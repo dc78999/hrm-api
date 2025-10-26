@@ -42,6 +42,27 @@ docker-compose up -d
 docker-compose exec api pytest
 ```
 
+### Data Generation
+```bash
+# Install Faker for generating test data
+pip install Faker
+
+# Generate 1000 test records
+make generate-seed-data
+
+# Start containers with fresh data
+make up
+
+# To reset database with fresh test data
+make reset-db
+```
+
+The test data includes 1000 employee records with realistic:
+- Names and contact information
+- Department and position combinations
+- Office locations
+- Employment status (weighted towards 'active')
+
 ### API Documentation
 - OpenAPI documentation: http://localhost:8000/docs
 - ReDoc alternative: http://localhost:8000/redoc
