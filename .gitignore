@@ -31,6 +31,7 @@ ENV/
 .venv/
 .ENV/
 venv.bak/
+hrm-api/
 
 # Python tool caches
 .python-version
