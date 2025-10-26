@@ -42,20 +42,47 @@ docker-compose up -d
 docker-compose exec api pytest
 ```
 
+### Database Management
+Access pgAdmin4 through your browser:
+```bash
+# URL: http://localhost:5050
+# Email: admin@admin.com
+# Password: admin
+
+# To connect to the database:
+# 1. Add New Server
+# 2. Connection settings:
+#    - Host: postgres-hrm
+#    - Port: 5432
+#    - Database: hrm_db
+#    - Username: hrm_user
+#    - Password: hrm_password
+```
+
 ### Data Generation
 ```bash
-# Install Faker for generating test data
-pip install Faker
+# Initialize database with schema and seed data (all-in-one command)
+make init-db
 
-# Generate 1000 test records
+# Or to completely reset and reinitialize:
+make full-reset
+
+# Or step by step:
+make db-up
 make generate-seed-data
+make load-seed-data
 
-# Start containers with fresh data
-make up
+# Preview the generated SQL file (first 20 lines)
+make preview-seed
 
-# To reset database with fresh test data
-make reset-db
+# Preview the data in database
+make preview-db
 ```
+
+The initialization process:
+1. Creates database schema (tables, indexes, etc.)
+2. Loads generated test data
+3. Verifies the data load with counts
 
 The test data includes 1000 employee records with realistic:
 - Names and contact information
