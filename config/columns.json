@@ -1,5 +1,0 @@
-{
-  "org_1": ["id", "first_name", "last_name", "email", "department", "location", "position"],
-  "org_2": ["id", "first_name", "department", "position"],
-  "org_public": ["id", "first_name", "last_name", "department"]
-}
