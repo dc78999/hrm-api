@@ -1,58 +1,81 @@
-# hrm-api
+# HRM Search API
 
-# Description
+## Problem Statement
+Develop a scalable search API for a HR application managing millions of employee records. The system must handle heavy loads and provide efficient search capabilities while ensuring data security and preventing API abuse.
 
-A concise API for Human Resource Management (HRM) logic implemented with FastAPI.
+## Technical Stack & Architecture
 
+### Stack Selection
+- **FastAPI**: Chosen for high performance, async support, and automatic OpenAPI docs
+- **PostgreSQL**: Robust for millions of records, supports JSONB and Full-Text Search
+- **Docker**: Container orchestration and isolated environments
+- **Python 3.10**: Latest stable features while maintaining compatibility
 
-# Environment Setup
+### Design Architecture
+1. **Database Layer**
+   - Optimized schema with GIN indexes for full-text search
+   - JSONB for flexible attribute storage
+   - Partitioning ready for future scaling
 
-- Requirements:
-  - Linux / macOS
-  - Python 3.10+
-  - Docker (optional, for containerized run)
+2. **API Layer**
+   - RESTful endpoints with pagination
+   - Custom rate limiting (no external libs)
+   - Query parameter validation
+   - Response filtering per organization
 
-- Install locally (example):
-  - python -m venv .venv
-  - source .venv/bin/activate
-  - pip install -r requirements.txt
+## Setup & Launch
 
-- Configuration:
-  - The per-organization column configuration is stored in config/columns.json.
-  - Database: a lightweight sqlite DB is auto-created at first run at data/users.db.
-  - Secrets: none required for the demo. For production, put secrets in environment variables.
+### Prerequisites
+- Docker
+- Docker Compose
+- Make (optional, for convenience)
 
-# Testing
+### Local Development
+```bash
+# Clone repository
+git clone [repository-url]
 
-- Unit tests use pytest and FastAPI TestClient.
-  - Run tests:
-    - pytest
+# Start containers
+docker-compose up -d
 
-# Security
+# Run tests
+docker-compose exec api pytest
+```
 
-- No sensitive attributes are returned unless explicitly allowed by the organization's column config.
-- Rate-limiting is implemented in-process to mitigate abuse. For production, use distributed rate limiting.
-- Keep production DB credentials and secrets out of the repo and use a secrets manager.
+### API Documentation
+- OpenAPI documentation: http://localhost:8000/docs
+- ReDoc alternative: http://localhost:8000/redoc
 
-# Contribution
+## Security Considerations
 
-- Fork, implement features in feature branches, run linters & tests, and open a PR.
-- Add tests for any new behavior.
+1. **Data Protection**
+   - Row-level security in PostgreSQL
+   - Response filtering prevents data leaks
+   - Input validation and sanitization
 
-# Contact
+2. **API Security**
+   - Rate limiting per client
+   - JWT authentication (Stage 2)
+   - CORS policy enforcement
 
-For questions or issues, contact: dev-team@example.com
+3. **Infrastructure**
+   - Containerized deployment
+   - No sensitive data in codebase
+   - Regular security updates
 
-# Run & Build
+## Development Stages
 
-- Run locally:
-  - uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+### Stage 1 (Current)
+- Search API implementation
+- Database design for scale
+- Unit tests
+- Basic containerization
 
-- Build and run with Docker:
-  - docker build -t hrm-api .
-  - docker run -p 8000:8000 hrm-api
+### Stage 2 (Planned)
+- Rate limiting
+- Authentication
+- Advanced monitoring
 
-# Notes
-
-- OpenAPI schema is available at /openapi.json and interactive docs at /docs.
-- The repository link placeholder: https://github.com/yourusername/hrm-api
+## Contact
+- Maintainer: [Your Name]
+- Email: [Your Email]
