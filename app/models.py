@@ -16,3 +16,4 @@ class Employee(BaseModel):
     position: str
     location: str
     status: EmployeeStatus
+    company: str
