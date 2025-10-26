@@ -22,16 +22,8 @@ CREATE TABLE IF NOT EXISTS employees (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-    -- FTS VECTOR (GENERATED ALWAYS): Includes all filterable text for comprehensive search
-    search_vector TSVECTOR GENERATED ALWAYS AS (
-        setweight(to_tsvector('english', status::text), 'A') || 
-        setweight(to_tsvector('english', location), 'A') || 
-        setweight(to_tsvector('english', position), 'A') ||
-        -- Pull searchable text from JSONB (e.g., name, email, phone)
-        setweight(to_tsvector('english', coalesce(data ->> 'full_name', '')), 'B') ||
-        setweight(to_tsvector('english', coalesce(data ->> 'email', '')), 'C') ||
-        setweight(to_tsvector('english', coalesce(data ->> 'phone', '')), 'C')
-    ) STORED
+    -- FTS VECTOR (Crucial for search performance): Includes all filterable text for comprehensive search
+    search_vector TSVECTOR
 );
 
 -- ----------------------------------------------------------------------
@@ -39,13 +31,13 @@ CREATE TABLE IF NOT EXISTS employees (
 -- ----------------------------------------------------------------------
 
 -- 1. GIN Index for FTS (Crucial for search performance)
-CREATE INDEX IF NOT EXISTS idx_employees_search_vector ON employees USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS idx_employees_search ON employees USING GIN (search_vector);
 
 -- 2. GIN Index for JSONB (Crucial for querying dynamic fields)
-CREATE INDEX IF NOT EXISTS idx_employees_data_gin ON employees USING GIN (data);
+CREATE INDEX IF NOT EXISTS idx_employees_data ON employees USING GIN (data);
 
 -- 3. B-Tree Indexes for Filter Columns (Mandatory for fast WHERE/ORDER BY)
-CREATE INDEX IF NOT EXISTS idx_employees_org_id ON employees (organization_id);
+CREATE INDEX IF NOT EXISTS idx_employees_org ON employees (organization_id);
 CREATE INDEX IF NOT EXISTS idx_employees_status ON employees (status);
 CREATE INDEX IF NOT EXISTS idx_employees_location ON employees (location);
 CREATE INDEX IF NOT EXISTS idx_employees_position ON employees (position);
@@ -69,18 +61,39 @@ CREATE POLICY org_isolation_policy ON employees
     );
 
 -- ----------------------------------------------------------------------
--- MAINTENANCE TRIGGER
+-- TRIGGERS
 -- ----------------------------------------------------------------------
--- Update updated_at column on every row modification
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+
+-- Trigger to update search_vector before insert or update
+CREATE OR REPLACE FUNCTION employees_update_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('english', NEW.status::text), 'A') ||
+        setweight(to_tsvector('english', NEW.location), 'A') ||
+        setweight(to_tsvector('english', NEW.position), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'full_name', '')), 'B') ||
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'email', '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'phone', '')), 'C');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER employees_search_vector_update
+    BEFORE INSERT OR UPDATE ON employees
+    FOR EACH ROW
+    EXECUTE FUNCTION employees_update_search_vector();
+
+-- Trigger to update updated_at column on every row modification
+CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER update_employees_updated_at
+CREATE TRIGGER update_employees_timestamp
     BEFORE UPDATE ON employees
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_updated_at();
