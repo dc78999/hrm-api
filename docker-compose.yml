@@ -36,11 +36,13 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --reload
     environment:
       # Inject the DSN used by the FastAPI app
-      DATABASE_URL: "postgresql://hrm_user:hrm_password@db:5432/hrm_db"
+      DATABASE_URL: postgresql://hrm_user:hrm_password@db:5432/hrm_db
       # Set the environment variable for configuration file location
       CONFIG_FILE_PATH: "/app/config.json"
+      PYTHONPATH: /app
     volumes:
-      - .:/app  # Mount current directory for live code changes
+      - ./app:/app/app
+      - ./tests:/app/tests
     ports:
       - "8000:8000"
     depends_on:
