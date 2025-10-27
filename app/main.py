@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 1. Startup Logic (Runs before the application starts accepting requests)
-    print("Application startup: Ensuring database connection is ready...")
-    ensure_db()
-    
+        
     yield # <-- Everything above 'yield' is startup logic.
     
     # 2. Shutdown Logic (Runs after the application stops accepting requests)
