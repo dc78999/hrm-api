@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, UUID4, EmailStr
+from typing import List, Optional, Dict, Any
+from datetime import datetime
 from enum import Enum
 
 class EmployeeStatus(str, Enum):
@@ -17,3 +18,18 @@ class Employee(BaseModel):
     location: str
     status: EmployeeStatus
     company: str
+
+class EmployeeResponse(BaseModel):
+    id: UUID4
+    location: str
+    position: str
+    status: str
+    data: Dict[str, Any]  # Contains email and other flexible fields
+    created_at: datetime
+    updated_at: datetime
+
+class SearchResponse(BaseModel):
+    items: List[EmployeeResponse]
+    total: int
+    page: int
+    page_size: int
