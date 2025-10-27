@@ -21,12 +21,16 @@ class Employee(BaseModel):
 
 class EmployeeResponse(BaseModel):
     id: UUID4
+    organization_id: UUID4
     location: str
     position: str
     status: str
-    data: Dict[str, Any]  # Contains email and other flexible fields
+    data: Dict[str, Any]
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class SearchResponse(BaseModel):
     items: List[EmployeeResponse]
