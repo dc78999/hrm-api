@@ -4,7 +4,7 @@ services:
   # --- PostgreSQL Database Service ---
   db:
     image: postgres:13
-    container_name: hrm_postgres_db
+    container_name: postgres-hrm  # Match the hostname
     restart: always
     hostname: postgres-hrm  # Add fixed hostname for pgAdmin
     environment:
