@@ -50,6 +50,12 @@ async def search_employees_endpoint(
     logger.info(f"Search params: q={q}, location={location}, position={position}, status={status}")
     logger.info(f"Pagination: page={page}, page_size={page_size}")
     
+    # Validate pagination parameters
+    if page < 1:
+        raise HTTPException(status_code=422, detail="Page number must be greater than 0")
+    if page_size < 1 or page_size > 100:
+        raise HTTPException(status_code=422, detail="Page size must be between 1 and 100")
+    
     try:
         result = search_employees(
             organization_id=x_organization_id,
@@ -62,6 +68,12 @@ async def search_employees_endpoint(
         )
         logger.info(f"Search returned {len(result['items'])} items out of {result['total']} total")
         return result
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(status_code=422, detail=str(e))
+    except ConnectionError as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise HTTPException(status_code=503, detail="Database connection error")
     except Exception as e:
         logger.error(f"Search failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
