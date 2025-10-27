@@ -1,10 +1,14 @@
 from contextlib import asynccontextmanager
 from typing import Optional
 import logging
+import os
+import time
 from fastapi import FastAPI, Query, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models import SearchResponse
 from .db.database import ensure_db, search_employees
+from .middleware.rate_limiter import RateLimitMiddleware
 
 # Setup logging
 logging.basicConfig(
@@ -15,20 +19,59 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Startup Logic (Runs before the application starts accepting requests)
+    # Startup Logic
         
-    yield # <-- Everything above 'yield' is startup logic.
+    # Initialize rate limiter
+    persistence_dir = os.getenv("RATE_LIMIT_STORAGE", "./data")
+    logger.info(f"Initializing rate limiter with persistence directory: {persistence_dir}")
     
-    # 2. Shutdown Logic (Runs after the application stops accepting requests)
+    yield
+    
+    # Shutdown Logic
     print("Application shutdown: Performing cleanup...")
-    # Add any cleanup tasks here, e.g., closing database connection pools or clearing caches.
-
+    # Save rate limiter state on shutdown
+    if hasattr(app.state, 'rate_limiter'):
+        try:
+            app.state.rate_limiter.limiter._save_to_file()
+            logger.info("Rate limiter state saved on shutdown")
+        except Exception as e:
+            logger.error(f"Failed to save rate limiter state: {e}")
 
 app = FastAPI(
     title="hrm-api", 
-    description="HRM API with dynamic columns and simple rate limiting",
-    lifespan=lifespan # <-- Pass the new context manager here
+    description="HRM API with dynamic columns and in-memory rate limiting",
+    lifespan=lifespan
 )
+
+# Add CORS middleware (if needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize and add rate limiting middleware
+persistence_dir = os.getenv("RATE_LIMIT_STORAGE", "./data")
+rate_limiter = RateLimitMiddleware(persistence_dir=persistence_dir)
+
+# Store rate limiter in app state for access in lifespan
+app.state.rate_limiter = rate_limiter
+
+# Add the rate limiting middleware
+app.middleware("http")(rate_limiter)
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint (has its own rate limiting rules)"""
+    # TODO: implement logic to check 
+    return {"status": "healthy", "service": "hrm-api", "timestamp": int(time.time())}
+
+@app.get("/health/rate-limit-stats")
+async def rate_limit_stats():
+    """Get rate limiter statistics (for monitoring)"""
+    return rate_limiter.get_stats()
 
 @app.get("/api/v1/employees/search", response_model=SearchResponse)
 async def search_employees_endpoint(
@@ -42,7 +85,7 @@ async def search_employees_endpoint(
 ):
     """
     Search employees with filters and full-text search.
-    Requires organization_id in headers for data isolation.
+    Rate limited: 200 requests/hour, 20 requests/minute per client.
     """
     logger.info(f"Searching employees for organization: {x_organization_id}")
     logger.info(f"Search params: q={q}, location={location}, position={position}, status={status}")
