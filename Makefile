@@ -1,4 +1,4 @@
-.PHONY: install-dev generate-seed-data db-up db-down db-reset psql load-seed-data init-db
+.PHONY: install-dev generate-seed-data db-up db-down db-reset psql load-seed-data init-db test test-watch test-coverage
 
 install-dev:
 	pip install -r requirements-dev.txt
@@ -53,3 +53,12 @@ preview-db:
 
 # Reset everything and reinitialize
 full-reset: db-reset init-db
+
+test:
+	PYTHONPATH=. pytest
+
+test-watch:
+	PYTHONPATH=. pytest -f
+
+test-coverage:
+	PYTHONPATH=. pytest --cov=app --cov-report=term-missing

@@ -14,7 +14,7 @@ Develop a scalable search API for a HR application managing millions of employee
 ### Design Architecture
 1. **Database Layer**
    - Optimized schema with GIN indexes for full-text search
-   - JSONB for flexible attribute storage
+   - JSONB for dynamic attribute storage and flexible columns
    - Partitioning ready for future scaling
 
 2. **API Layer**
@@ -127,3 +127,15 @@ The test data includes 1000 employee records with realistic:
 ## Contact
 - Maintainer: [Your Name]
 - Email: [Your Email]
+
+### Testing
+```bash
+# Run tests once
+make test
+
+# Run tests in watch mode (requires pytest-watch)
+make test-watch
+
+# Run tests with coverage report
+make test-coverage
+```
