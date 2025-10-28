@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def get_db():
     """Get PostgreSQL connection"""
     return psycopg2.connect(
-        host="localhost",
+        host="postgres-hrm",
         database="hrm_db",
         user="hrm_user",
         password="hrm_password"
