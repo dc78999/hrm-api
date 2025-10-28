@@ -27,6 +27,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - hrm_network
 
   # --- FastAPI Application Service ---
   api:
@@ -43,11 +45,22 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
+      - ./data:/app/data
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy # Ensure DB is ready before starting the app
+    networks:
+      - hrm_network
+    # restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "description=HRM API with OpenAPI documentation at /docs"
 
   # --- pgAdmin4 Service ---
   pgadmin:
@@ -67,3 +80,7 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+
+networks:
+  hrm_network:
+    driver: bridge
