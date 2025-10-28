@@ -160,45 +160,42 @@ Based on the seed data, you can search for employees in these departments:
 ## Security Considerations
 
 1. **Data Protection**
-   - Row-level security in PostgreSQL
-   - Response filtering prevents data leaks
+   - Row-level security in PostgreSQL ?
+   - Response filtering prevents data leaks ?
    - Input validation and sanitization
 
 2. **API Security**
-   - Rate limiting per client
-   - JWT authentication (Stage 2)
-   - CORS policy enforcement
+   - Authentication/Authorization
 
-3. **Infrastructure**
-   - Containerized deployment
-   - No sensitive data in codebase
-   - Regular security updates
+3. **Maintenance**
 
 ## Development Stages
 
-### Stage 1 (Current)
+### Stage 1 (Done)
 - Search API implementation
 - Database design for scale
 - Unit tests
 - Basic containerization
 
-### Stage 2 (Planned)
+### Stage 2 (Done)
 - Rate limiting
-- Authentication
-- Advanced monitoring
 
-## Contact
-- Maintainer: [Your Name]
-- Email: [Your Email]
 
 ### Testing
 ```bash
 # Run tests once
 make test
 
-# Run tests in watch mode (requires pytest-watch)
-make test-watch
-
 # Run tests with coverage report
 make test-coverage
 ```
+### FAQ
+If using WSL on Windows,
+
+use this command to find the WSL IP address:
+
+`ip addr | grep eth0` 
+
+then access the OpenAPI docs at:
+
+`http://<WSL_IP>:8000/docs`
