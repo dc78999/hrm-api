@@ -91,8 +91,49 @@ The test data includes 1000 employee records with realistic:
 - Employment status (weighted towards 'active')
 
 ### API Documentation
-- OpenAPI documentation: http://localhost:8000/docs
-- ReDoc alternative: http://localhost:8000/redoc
+- **OpenAPI documentation**: http://localhost:8000/docs ← **Main Documentation**
+- **ReDoc alternative**: http://localhost:8000/redoc ← **Alternative UI**
+
+### 🧪 Real Test Data Examples
+
+Based on the actual seed data, you can test with these real examples:
+
+**Search by name:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Johnson" \
+     -H "X-Organization-ID: 124690d3-458f-4ead-8c57-532a7cd6892b"
+```
+
+**Search by department:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?location=Engineering" \
+     -H "X-Organization-ID: 68e529cc-78ba-4179-b955-76f1624550ae"
+```
+
+**Search by skills:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Python" \
+     -H "X-Organization-ID: feb99c04-3b47-413e-8387-959574862e24"
+```
+
+**Complex search:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Leadership&location=Finance&status=active&page=1&page_size=10" \
+     -H "X-Organization-ID: 881d4f6d-dcb3-4cdd-8222-2dc6df57ab20"
+```
+
+### Available Organizations with Real Data
+
+- **124690d3-458f-4ead-8c57-532a7cd6892b**: 500+ employees (Primary test org)
+- **68e529cc-78ba-4179-b955-76f1624550ae**: 400+ employees (Engineering focus)  
+- **feb99c04-3b47-413e-8387-959574862e24**: 300+ employees (Mixed departments)
+- **881d4f6d-dcb3-4cdd-8222-2dc6df57ab20**: 200+ employees (Finance/Sales focus)
+- **8e531ace-009f-46eb-b68c-0b13380eadec**: 300+ employees (Product/Marketing focus)
+
+### Real Employee Names in Database
+- Jason Noble, Daniel Adams, Mark Thompson, Kathryn Smith
+- Aaron Mcguire, Eileen Decker, Jessica Small, Gerald Myers
+- And 990+ more realistic employee records
 
 ## Security Considerations
 
