@@ -106,6 +106,12 @@ curl -X GET "http://localhost:8000/api/v1/employees/search?q=Johnson" \
 
 **Search by department:**
 ```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Engineering" \
+     -H "X-Organization-ID: 68e529cc-78ba-4179-b955-76f1624550ae"
+```
+
+**Search by location:**
+```bash
 curl -X GET "http://localhost:8000/api/v1/employees/search?location=Engineering" \
      -H "X-Organization-ID: 68e529cc-78ba-4179-b955-76f1624550ae"
 ```
@@ -116,11 +122,27 @@ curl -X GET "http://localhost:8000/api/v1/employees/search?q=Python" \
      -H "X-Organization-ID: feb99c04-3b47-413e-8387-959574862e24"
 ```
 
-**Complex search:**
+**Search by department and skills combined:**
 ```bash
-curl -X GET "http://localhost:8000/api/v1/employees/search?q=Leadership&location=Finance&status=active&page=1&page_size=10" \
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Finance Leadership" \
      -H "X-Organization-ID: 881d4f6d-dcb3-4cdd-8222-2dc6df57ab20"
 ```
+
+**Complex search:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/employees/search?q=Marketing Python&location=Marketing&status=active&page=1&page_size=10" \
+     -H "X-Organization-ID: 881d4f6d-dcb3-4cdd-8222-2dc6df57ab20"
+```
+
+### Available Department Values in Test Data
+
+Based on the seed data, you can search for employees in these departments:
+- **Engineering** - Software developers, engineers
+- **Marketing** - Marketing specialists, managers  
+- **Finance** - Financial analysts, accountants
+- **HR** - Human resources personnel
+- **Product** - Product managers, designers
+- **Sales** - Sales representatives, managers
 
 ### Available Organizations with Real Data
 
