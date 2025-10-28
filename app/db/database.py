@@ -35,14 +35,29 @@ def search_employees(
     q: Optional[str] = None,
     location: Optional[str] = None,
     position: Optional[str] = None,
+    department: Optional[str] = None,  # Add department parameter
     status: Optional[str] = None,
     page: int = 1,
     page_size: int = 10
-) -> Dict:
+) -> Dict[str, Any]:
     """
-    Search employees with pagination and filters.
-    Returns exactly page_size items unless there aren't enough records.
+    Search employees with filters and full-text search.
+    
+    Args:
+        organization_id: Organization UUID for data isolation
+        q: Full-text search query across all fields
+        location: Filter by work location (exact match)
+        position: Filter by job position (exact match)
+        department: Filter by department from JSONB data (exact match)
+        status: Filter by employment status (active, inactive, terminated)
+        page: Page number (1-based)
+        page_size: Items per page (max 100)
+    
+    Returns:
+        Dict with items, total, page, and page_size
     """
+    # ...existing validation code...
+    
     try:
         with get_db() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -55,6 +70,9 @@ def search_employees(
                 if position:
                     conditions.append("position = %s")
                     params.append(position)
+                if department:  # Handle department filter
+                    conditions.append("data ->> 'department' = %s")
+                    params.append(department)
                 if status:
                     conditions.append("status = %s")
                     params.append(status)

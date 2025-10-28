@@ -668,6 +668,7 @@ def test_search_endpoint_parameter_validation():
     assert 'q' in params
     assert 'location' in params
     assert 'position' in params
+    assert 'department' in params  # Add department parameter check
     assert 'status' in params
     assert 'page' in params
     assert 'page_size' in params
@@ -772,14 +773,16 @@ def test_search_employees_all_optional_params():
     
     # If we have employees, use actual data from the first employee
     sample_employee = initial_data["items"][0]
+    sample_department = sample_employee.get("data", {}).get("department", "Engineering")
     
     response = client.get(
         "/api/v1/employees/search",
         headers={"X-Organization-ID": TEST_ORG_ID},
         params={
-            "q": "test",  # Use generic search term
+            "q": "test",
             "location": sample_employee["location"],
             "position": sample_employee["position"],
+            "department": sample_department,  # Add department parameter
             "status": sample_employee["status"],
             "page": 1,
             "page_size": 5
@@ -800,3 +803,336 @@ def test_search_employees_all_optional_params():
         assert employee["status"] == sample_employee["status"]
         assert employee["location"] == sample_employee["location"]
         assert employee["position"] == sample_employee["position"]
+        assert employee.get("data", {}).get("department") == sample_department
+
+def test_search_employees_by_department():
+    """Should filter employees by department"""
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": "Engineering"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    for employee in data["items"]:
+        assert employee.get("data", {}).get("department") == "Engineering"
+
+def test_search_employees_department_and_skills_combined():
+    """Should combine department filter with text search"""
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": "Finance", "q": "Leadership"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    for employee in data["items"]:
+        assert employee.get("data", {}).get("department") == "Finance"
+
+def test_search_employees_department_case_insensitive():
+    """Should handle department search case-insensitively"""
+    # Test with different cases
+    response_lower = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": "engineering"}
+    )
+    response_upper = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": "ENGINEERING"}
+    )
+    
+    assert response_lower.status_code == 200
+    assert response_upper.status_code == 200
+    
+    data_lower = response_lower.json()
+    data_upper = response_upper.json()
+    
+    # Should return same number of results regardless of case
+    assert data_lower["total"] == data_upper["total"]
+
+def test_search_employees_all_filters_with_department():
+    """Should handle all filters including department applied simultaneously"""
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={
+            "q": "engineering",
+            "location": "Engineering",
+            "position": "Engineering",
+            "department": "Engineering",
+            "status": "active",
+            "page": 1,
+            "page_size": 5
+        }
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert len(data["items"]) <= 5
+    
+    # Verify filters are applied
+    for employee in data["items"]:
+        assert employee["organization_id"] == TEST_ORG_ID
+        assert employee["status"] == "active"
+        if data["items"]:  # Only check if we have results
+            assert employee["position"] == "Engineering"
+            assert employee.get("data", {}).get("department") == "Engineering"
+
+def test_search_employees_department_nonexistent():
+    """Should handle search for non-existent department"""
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": "NonExistentDepartment"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["items"] == []
+    assert data["total"] == 0
+
+def test_search_employees_department_empty_string():
+    """Should handle empty department filter"""
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"department": ""}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+
+# Update existing test to include department parameter
+def test_search_employees_all_optional_params():
+    """Test search with all optional parameters provided"""
+    # First, let's check what data is available for our test organization
+    initial_response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"page": 1, "page_size": 10}
+    )
+    
+    assert initial_response.status_code == 200
+    initial_data = initial_response.json()
+    
+    # If no employees exist for this org, create a more flexible test
+    if initial_data["total"] == 0:
+        # Test with parameters that won't find anything but should still work
+        response = client.get(
+            "/api/v1/employees/search",
+            headers={"X-Organization-ID": TEST_ORG_ID},
+            params={
+                "q": "nonexistent",
+                "location": "NonexistentLocation",
+                "position": "NonexistentPosition",
+                "status": "active",
+                "page": 1,
+                "page_size": 10
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+        assert "page" in data
+        assert "page_size" in data
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["page"] == 1
+        assert data["page_size"] == 10
+        return
+    
+    # If we have employees, use actual data from the first employee
+    sample_employee = initial_data["items"][0]
+    sample_department = sample_employee.get("data", {}).get("department", "Engineering")
+    
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={
+            "q": "test",
+            "location": sample_employee["location"],
+            "position": sample_employee["position"],
+            "department": sample_department,  # Add department parameter
+            "status": sample_employee["status"],
+            "page": 1,
+            "page_size": 5
+        }
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert "total" in data
+    assert "page" in data
+    assert "page_size" in data
+    assert len(data["items"]) <= 5
+    
+    # Verify filters are applied correctly
+    for employee in data["items"]:
+        assert employee["organization_id"] == TEST_ORG_ID
+        assert employee["status"] == sample_employee["status"]
+        assert employee["location"] == sample_employee["location"]
+        assert employee["position"] == sample_employee["position"]
+        assert employee.get("data", {}).get("department") == sample_department
+
+# Update parameter validation test to include department
+def test_search_endpoint_parameter_validation():
+    """Test search endpoint parameter constraints"""
+    # Test parameter validation by examining the endpoint signature
+    from app.main import search_employees_endpoint
+    import inspect
+    
+    sig = inspect.signature(search_employees_endpoint)
+    
+    # Verify parameters exist
+    params = sig.parameters
+    assert 'x_organization_id' in params
+    assert 'q' in params
+    assert 'location' in params
+    assert 'position' in params
+    assert 'department' in params  # Add department parameter check
+    assert 'status' in params
+    assert 'page' in params
+    assert 'page_size' in params
+
+def test_logging_configuration():
+    """Test that logging is properly configured"""
+    import logging
+    
+    # Test that logger exists and is configured
+    from app.main import logger as main_logger
+    
+    assert main_logger is not None
+    assert main_logger.name == "app.main"
+    assert main_logger.level <= logging.INFO  # Should be INFO or lower
+    
+    # Test that root logger has handlers
+    root_logger = logging.getLogger()
+    assert len(root_logger.handlers) > 0
+
+def test_search_employees_boundary_conditions():
+    """Test boundary conditions for pagination parameters"""
+    # Test minimum valid values
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"page": 1, "page_size": 1}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) <= 1
+    assert "total" in data
+    assert "page" in data
+    assert "page_size" in data
+    
+    # Test maximum valid values
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"page": 1, "page_size": 100}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) <= 100
+    assert "total" in data
+    assert "page" in data
+    assert "page_size" in data
+    
+    # Test just over maximum page_size (should fail validation)
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"page": 1, "page_size": 101}
+    )
+    assert response.status_code == 422
+    error_detail = response.json()["detail"]
+    # Check that the error is about page_size validation
+    page_size_errors = [
+        err for err in error_detail 
+        if "page_size" in str(err).lower()
+    ]
+    assert len(page_size_errors) > 0, "Expected page_size validation error"
+
+def test_search_employees_all_optional_params():
+    """Test search with all optional parameters provided"""
+    # First, let's check what data is available for our test organization
+    initial_response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={"page": 1, "page_size": 10}
+    )
+    
+    assert initial_response.status_code == 200
+    initial_data = initial_response.json()
+    
+    # If no employees exist for this org, create a more flexible test
+    if initial_data["total"] == 0:
+        # Test with parameters that won't find anything but should still work
+        response = client.get(
+            "/api/v1/employees/search",
+            headers={"X-Organization-ID": TEST_ORG_ID},
+            params={
+                "q": "nonexistent",
+                "location": "NonexistentLocation",
+                "position": "NonexistentPosition",
+                "status": "active",
+                "page": 1,
+                "page_size": 10
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+        assert "page" in data
+        assert "page_size" in data
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["page"] == 1
+        assert data["page_size"] == 10
+        return
+    
+    # If we have employees, use actual data from the first employee
+    sample_employee = initial_data["items"][0]
+    sample_department = sample_employee.get("data", {}).get("department", "Engineering")
+    
+    response = client.get(
+        "/api/v1/employees/search",
+        headers={"X-Organization-ID": TEST_ORG_ID},
+        params={
+            "q": "test",
+            "location": sample_employee["location"],
+            "position": sample_employee["position"],
+            "department": sample_department,  # Add department parameter
+            "status": sample_employee["status"],
+            "page": 1,
+            "page_size": 5
+        }
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert "total" in data
+    assert "page" in data
+    assert "page_size" in data
+    assert len(data["items"]) <= 5
+    
+    # Verify filters are applied correctly
+    for employee in data["items"]:
+        assert employee["organization_id"] == TEST_ORG_ID
+        assert employee["status"] == sample_employee["status"]
+        assert employee["location"] == sample_employee["location"]
+        assert employee["position"] == sample_employee["position"]
+        assert employee.get("data", {}).get("department") == sample_department

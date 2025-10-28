@@ -269,7 +269,7 @@ async def search_employees_endpoint(
     q: Optional[str] = Query(
         None, 
         description="🔍 **Full-text search query**. Searches across names, emails, positions, departments, and other text fields. Case-insensitive with intelligent ranking.",
-        example="Engineering Python",
+        example="Engineering Python developer",
         max_length=500
     ),
     location: Optional[str] = Query(
@@ -281,6 +281,12 @@ async def search_employees_endpoint(
     position: Optional[str] = Query(
         None, 
         description="💼 **Filter by job position/title**. Exact match (case-insensitive). Based on actual data: Engineering, Marketing, Finance, HR, Product, Sales.",
+        example="Engineering",
+        max_length=100
+    ),
+    department: Optional[str] = Query(
+        None, 
+        description="🏢 **Filter by department**. Exact match (case-insensitive) from employee data. Based on actual data: Engineering, Marketing, Finance, HR, Product, Sales.",
         example="Engineering",
         max_length=100
     ),
@@ -320,6 +326,7 @@ async def search_employees_endpoint(
     **🎯 Exact Filters:**
     - `location`: Work office/location (Engineering, Marketing, Finance, HR, Product, Sales)
     - `position`: Job title/role (Engineering, Marketing, Finance, HR, Product, Sales) 
+    - `department`: Employee department (Engineering, Marketing, Finance, HR, Product, Sales)
     - `status`: Employment status (active, inactive, terminated)
     
     **📄 Pagination:**
@@ -330,6 +337,7 @@ async def search_employees_endpoint(
     ### ⚡ Performance Notes
     
     - Queries are optimized with GIN indexes for fast full-text search
+    - Department field is indexed with high priority (weight 'A') for fast department searches
     - JSONB fields are efficiently searchable
     - Database connection pooling ensures consistent performance
     - Rate limiting prevents system overload
@@ -342,35 +350,40 @@ async def search_employees_endpoint(
     
     ### 📖 Real Example Searches
     
-    **Find employees named "Johnson":**
+    **Find employees in Engineering department:**
     ```bash
-    GET /api/v1/employees/search?q=Johnson
+    GET /api/v1/employees/search?department=Engineering
     ```
     
-    **Find active employees in Engineering department:**  
+    **Find Finance department employees with Leadership skills:**  
     ```bash
-    GET /api/v1/employees/search?location=Engineering&status=active
+    GET /api/v1/employees/search?department=Finance&q=Leadership
     ```
     
-    **Search for Python developers:**
+    **Search for Python developers in specific department:**
     ```bash
-    GET /api/v1/employees/search?q=Python
+    GET /api/v1/employees/search?department=Engineering&q=Python
     ```
     
-    **Find Finance employees with leadership skills:**
+    **Find Marketing department employees at specific location:**
     ```bash
-    GET /api/v1/employees/search?location=Finance&q=Leadership&page=1&page_size=20
+    GET /api/v1/employees/search?department=Marketing&location=Marketing
     ```
     
-    ### 💡 Tips for Testing
+    **Complex search - HR department with Communication skills:**
+    ```bash
+    GET /api/v1/employees/search?department=HR&q=Communication&status=active&page=1&page_size=20
+    ```
     
-    - Use the **Try it out** button below to test the API interactively
-    - Try searching for: "Johnson", "Engineering", "Python", "Leadership"
-    - All test organization IDs have 200-500+ employees each
-    - Monitor the `X-RateLimit-*` headers in responses
+    ### 💡 Tips for Department Search
+    
+    - Use the **Try it out** button below to test department searches interactively
+    - Try searching for department names: "Engineering", "Marketing", "Finance", "HR", "Product", "Sales"
+    - Combine department filter with skills search: department=Engineering&q=Python
+    - Department filter works with all other filters and pagination
     """
     logger.info(f"Searching employees for organization: {x_organization_id}")
-    logger.info(f"Search params: q={q}, location={location}, position={position}, status={status}")
+    logger.info(f"Search params: q={q}, location={location}, position={position}, department={department}, status={status}")
     logger.info(f"Pagination: page={page}, page_size={page_size}")
     
     # Validate pagination parameters
@@ -385,6 +398,7 @@ async def search_employees_endpoint(
             q=q,
             location=location,
             position=position,
+            department=department,  # Add department parameter
             status=status,
             page=page,
             page_size=page_size

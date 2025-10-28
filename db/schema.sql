@@ -72,9 +72,11 @@ BEGIN
         setweight(to_tsvector('english', NEW.status::text), 'A') ||
         setweight(to_tsvector('english', NEW.location), 'A') ||
         setweight(to_tsvector('english', NEW.position), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'department', '')), 'A') ||
         setweight(to_tsvector('english', COALESCE(NEW.data ->> 'full_name', '')), 'B') ||
         setweight(to_tsvector('english', COALESCE(NEW.data ->> 'email', '')), 'C') ||
-        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'phone', '')), 'C');
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'phone', '')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.data ->> 'skills', '')), 'D');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
